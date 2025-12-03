@@ -18,7 +18,7 @@ jobs:
           pwd
           ls -la
           echo "📁 Listing fe/:"
-          ls -la fe || echo "❌ Không tìm thấy thư mục fe"
+          ls -la fe || echo "❌ Không tìm thấy thư mục Front-End"
 
       - name: Chuẩn bị file log
         run: touch ci.log
