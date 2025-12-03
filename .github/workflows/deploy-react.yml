@@ -12,9 +12,6 @@ jobs:
       - name: Lấy mã nguồn
         uses: actions/checkout@v4
 
-      - name: Chuẩn bị file log
-        run: touch ci.log
-
       - name: Cài Node.js
         uses: actions/setup-node@v4
         with:
@@ -23,12 +20,12 @@ jobs:
       - name: Cài đặt thư viện FE
         working-directory: ./fe
         run: |
-          npm install 2>&1 | tee -a ../ci.log
+          npm install
 
       - name: Build dự án FE
         working-directory: ./fe
         run: |
-          npm run build 2>&1 | tee -a ../ci.log
+          npm run build
 
       - name: Triển khai FE lên Server qua SSH
         uses: easingthemes/ssh-deploy@v4
@@ -39,7 +36,8 @@ jobs:
           SOURCE: "fe/dist/"
           TARGET: "/var/www/app"
 
-      - name: Gửi log CI/CD lên Discord
+      # 🎉 Thông báo lên Discord (Không file, không log)
+      - name: Gửi thông báo CI/CD lên Discord
         if: always()
         env:
           DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
@@ -47,8 +45,6 @@ jobs:
           GITHUB_SHA: ${{ github.sha }}
           JOB_STATUS: ${{ job.status }}
         run: |
-          [ -f ci.log ] || echo "No log captured." > ci.log
-
           if [ "$JOB_STATUS" = "success" ]; then
             ICON="✅"
             TITLE="Triển khai FE thành công"
@@ -59,9 +55,6 @@ jobs:
 
           CONTENT="${ICON} **${TITLE}**\nRepo: ${GITHUB_REPOSITORY}\nCommit: ${GITHUB_SHA}"
 
-          echo "{\"content\":\"${CONTENT}\"}" > payload.json
-
-          curl -sS \
-            -F "payload_json=@payload.json" \
-            -F "file1=@ci.log;type=text/plain" \
+          curl -sS -H "Content-Type: application/json" \
+            -d "{\"content\": \"${CONTENT}\"}" \
             "$DISCORD_WEBHOOK"
