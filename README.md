@@ -57,3 +57,5 @@ Xác định kỹ thuật kiểm thử, demo test case.
 
 Báo cáo slide (10–15 phút): **kết quả, hạn chế, hướng phát triển.**
 vkl
+
+haizzz
