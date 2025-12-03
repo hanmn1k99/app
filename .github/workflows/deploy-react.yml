@@ -1,4 +1,4 @@
-name: Triển khai ReactJS FE lên Server
+name: Triển khai ReactJS lên Server
 
 on:
   push:
@@ -17,7 +17,7 @@ jobs:
         with:
           node-version: '22'
 
-      - name: Cài đặt thư viện FE
+      - name: Cài đặt thư viện
         working-directory: ./fe
         run: |
           npm install
@@ -27,7 +27,7 @@ jobs:
         run: |
           npm run build
 
-      - name: Triển khai FE lên Server qua SSH
+      - name: Triển khai lên Server qua SSH
         uses: easingthemes/ssh-deploy@v4
         env:
           SSH_PRIVATE_KEY: ${{ secrets.SSH_KEY }}
@@ -47,10 +47,10 @@ jobs:
         run: |
           if [ "$JOB_STATUS" = "success" ]; then
             ICON="✅"
-            TITLE="Triển khai FE thành công"
+            TITLE="Triển khai thành công"
           else
             ICON="❌"
-            TITLE="Triển khai FE thất bại"
+            TITLE="Triển khai thất bại"
           fi
 
           CONTENT="${ICON} **${TITLE}**\nRepo: ${GITHUB_REPOSITORY}\nCommit: ${GITHUB_SHA}"
