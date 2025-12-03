@@ -1,4 +1,4 @@
-name: Triển khai ReactJS lên Server
+name: Triển khai ReactJS FE lên Server
 
 on:
   push:
@@ -11,14 +11,6 @@ jobs:
     steps:
       - name: Lấy mã nguồn
         uses: actions/checkout@v4
-
-      - name: Kiểm tra cấu trúc repo
-        run: |
-          echo "📁 Listing repo root:"
-          pwd
-          ls -la
-          echo "📁 Listing fe/:"
-          ls -la fe || echo "❌ Không tìm thấy thư mục Front-End"
 
       - name: Chuẩn bị file log
         run: touch ci.log
@@ -47,26 +39,25 @@ jobs:
           SOURCE: "fe/dist/"
           TARGET: "/var/www/app"
 
-      - name: Gửi log + link GitHub Actions lên Discord
+      - name: Gửi log CI/CD lên Discord
         if: always()
         env:
           DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
           GITHUB_REPOSITORY: ${{ github.repository }}
           GITHUB_SHA: ${{ github.sha }}
-          GITHUB_RUN_ID: ${{ github.run_id }}
           JOB_STATUS: ${{ job.status }}
         run: |
           [ -f ci.log ] || echo "No log captured." > ci.log
 
-          RUN_URL="https://github.com/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
-
           if [ "$JOB_STATUS" = "success" ]; then
             ICON="✅"
+            TITLE="Triển khai FE thành công"
           else
             ICON="❌"
+            TITLE="Triển khai FE thất bại"
           fi
 
-          CONTENT="$ICON Kết quả CI/CD: $JOB_STATUS\nRepo: ${GITHUB_REPOSITORY}\nCommit: ${GITHUB_SHA}\nXem full log trên GitHub: ${RUN_URL}"
+          CONTENT="${ICON} **${TITLE}**\nRepo: ${GITHUB_REPOSITORY}\nCommit: ${GITHUB_SHA}"
 
           echo "{\"content\":\"${CONTENT}\"}" > payload.json
 
