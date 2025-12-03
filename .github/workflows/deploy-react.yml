@@ -48,7 +48,7 @@ jobs:
           SSH_USER: ${{ secrets.SSH_USER }}
           SSH_HOST: ${{ secrets.SSH_HOST }}
         run: |
-          rsync -avz --delete \
+          rsync -avz --delete --no-perms --no-times \
             -e "ssh -o StrictHostKeyChecking=no -i ~/.ssh/deploy_key" \
             fe/dist/ \
             "$SSH_USER@$SSH_HOST:/var/www/app"
