@@ -1,4 +1,4 @@
-name: Triển khai ReactJS lên Server
+name: Triển khai ReactJS FE lên Server
 
 on:
   push:
@@ -17,26 +17,42 @@ jobs:
         with:
           node-version: '22'
 
-      - name: Cài đặt thư viện
+      - name: Cài đặt thư viện FE
         working-directory: ./fe
-        run: |
-          npm install
+        run: npm install
 
       - name: Build dự án FE
         working-directory: ./fe
-        run: |
-          npm run build
+        run: npm run build
 
-      - name: Triển khai dự án lên Server qua SSH
-        uses: easingthemes/ssh-deploy@v4
+      - name: Tạo file SSH key trên runner
         env:
-          SSH_PRIVATE_KEY: ${{ secrets.SSH_KEY }}
-          REMOTE_HOST: ${{ secrets.SSH_HOST }}
-          REMOTE_USER: ${{ secrets.SSH_USER }}
-          SOURCE: "fe/dist/"
-          TARGET: "/var/www/app"
+          SSH_KEY: ${{ secrets.SSH_KEY }}
+        run: |
+          mkdir -p ~/.ssh
+          printf '%s\n' "$SSH_KEY" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
 
-      # 🎉 Thông báo lên Discord (Không file, không log)
+      - name: Test SSH từ GitHub Actions tới server
+        env:
+          SSH_USER: ${{ secrets.SSH_USER }}
+          SSH_HOST: ${{ secrets.SSH_HOST }}
+        run: |
+          ssh -o StrictHostKeyChecking=no \
+              -i ~/.ssh/deploy_key \
+              "$SSH_USER@$SSH_HOST" \
+              "echo '✅ SSH OK từ GitHub Actions'"
+
+      - name: Deploy FE bằng rsync
+        env:
+          SSH_USER: ${{ secrets.SSH_USER }}
+          SSH_HOST: ${{ secrets.SSH_HOST }}
+        run: |
+          rsync -avz --delete \
+            -e "ssh -o StrictHostKeyChecking=no -i ~/.ssh/deploy_key" \
+            fe/dist/ \
+            "$SSH_USER@$SSH_HOST:/var/www/app"
+
       - name: Gửi thông báo CI/CD lên Discord
         if: always()
         env:
@@ -45,16 +61,18 @@ jobs:
           GITHUB_SHA: ${{ github.sha }}
           JOB_STATUS: ${{ job.status }}
         run: |
+          SHORT_SHA=${GITHUB_SHA::7}
+
           if [ "$JOB_STATUS" = "success" ]; then
             ICON="✅"
-            TITLE="Triển khai thành công"
+            TITLE="Triển khai FE thành công"
           else
             ICON="❌"
-            TITLE="Triển khai thất bại"
+            TITLE="Triển khai FE thất bại"
           fi
 
-          CONTENT="${ICON} **${TITLE}**\nRepo: ${GITHUB_REPOSITORY}\nCommit: ${GITHUB_SHA}"
+          MESSAGE="${ICON} **${TITLE}** | Repo: ${GITHUB_REPOSITORY} | Commit: ${SHORT_SHA}"
 
           curl -sS -H "Content-Type: application/json" \
-            -d "{\"content\": \"${CONTENT}\"}" \
+            -d "{\"content\": \"${MESSAGE}\"}" \
             "$DISCORD_WEBHOOK"
