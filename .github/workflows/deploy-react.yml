@@ -1,90 +1,48 @@
-name: CI/CD React to Ubuntu
+name: Triển khai ReactJS lên Server
 
 on:
   push:
-    branches:
-      - main   # đổi nếu deploy branch khác
+    branches: [ "main" ]
 
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - name: Lấy mã nguồn
+        uses: actions/checkout@v3
 
-      - name: Use Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '22'
+      - name: Cài đặt thư viện
+        run: npm install
 
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Lint
-        run: |
-          if [ -f package.json ] && cat package.json | grep -q "\"lint\""; then
-            npm run lint
-          else
-            echo "No lint script, skip."
-          fi
-
-      - name: Test
-        run: |
-          if [ -f package.json ] && cat package.json | grep -q "\"test\""; then
-            npm test -- --watch=false
-          else
-            echo "No test script, skip."
-          fi
-
-      - name: Build
+      - name: Build dự án
         run: npm run build
 
-      - name: Archive production artifacts
+      - name: Triển khai lên Server qua SSH
+        uses: easingthemes/ssh-deploy@v4
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_KEY }}
+          SOURCE: "dist/"
+          REMOTE_HOST: "YOUR_SERVER_IP"
+          REMOTE_USER: "ubuntu"
+          TARGET: "/var/www/my-react-app"
+
+      # 🎉 Thông báo khi triển khai thành công
+      - name: Gửi thông báo Discord (Thành công)
+        if: success()
         run: |
-          # nếu dùng CRA thì đổi dist -> build
-          tar -czf build.tar.gz dist
+          curl -H "Content-Type: application/json" \
+          -d "{
+            \"content\": \"✅ **Triển khai thành công!**\n📌 Repository: $GITHUB_REPOSITORY\n🔧 Commit: $GITHUB_SHA\n🎯 Mọi thứ đã chạy ổn định trên server.\"
+          }" \
+          ${{ secrets.DISCORD_WEBHOOK }}
 
-      - name: Copy build to server
-        uses: appleboy/scp-action@v0.1.7
-        with:
-          host: ${{ secrets.SSH_HOST }}
-          username: ${{ secrets.SSH_USER }}
-          key: ${{ secrets.SSH_KEY }}
-          source: "build.tar.gz"
-          target: "~/deploy"
-
-      - name: Deploy on server
-        uses: appleboy/ssh-action@v1.2.0
-        with:
-          host: ${{ secrets.SSH_HOST }}
-          username: ${{ secrets.SSH_USER }}
-          key: ${{ secrets.SSH_KEY }}
-          script: |
-            mkdir -p ~/deploy
-            cd ~/deploy
-            tar -xzf build.tar.gz
-            sudo rm -rf /var/www/my-react-app/*
-            sudo cp -r dist/* /var/www/my-react-app/
-            sudo systemctl reload nginx
-
-  notify-on-failure:
-    needs: build-and-deploy
-    runs-on: ubuntu-latest
-    if: failure()   # chỉ chạy khi job trên FAIL
-
-    steps:
-      - name: Send Slack notification on failure
+      # ❗ Thông báo khi lỗi build hoặc deploy
+      - name: Gửi thông báo Discord (Thất bại)
+        if: failure()
         run: |
-          if [ -z "${{ secrets.SLACK_WEBHOOK_URL }}" ]; then
-            echo "No slack webhook configured, skip."
-            exit 0
-          fi
-
-          payload='{
-            "text": ":x: CI/CD FAILED for '${{ github.repository }}' on branch '${{ github.ref_name }}'.\nWorkflow: '${{ github.workflow }}'\nCommit: '${{ github.sha }}'\nBy: '${{ github.actor }}'"
-          }'
-
-          curl -X POST -H 'Content-type: application/json' \
-            --data "$payload" \
-            ${{ secrets.SLACK_WEBHOOK_URL }}
+          curl -H "Content-Type: application/json" \
+          -d "{
+            \"content\": \"❌ **Triển khai thất bại!**\n⚠ Đã xảy ra lỗi trong quá trình Build hoặc Deploy.\n📌 Repository: $GITHUB_REPOSITORY\n➡ Vui lòng kiểm tra lại *GitHub Actions Logs* để biết chi tiết.\"
+          }" \
+          ${{ secrets.DISCORD_WEBHOOK }}
