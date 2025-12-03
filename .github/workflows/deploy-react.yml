@@ -1,4 +1,4 @@
-name: Triển khai ReactJS lên Server
+name: Triển khai ReactJS FE lên Server
 
 on:
   push:
@@ -10,39 +10,46 @@ jobs:
 
     steps:
       - name: Lấy mã nguồn
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
-      - name: Cài đặt thư viện
+      - name: Cài Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Cài đặt thư viện FE
+        working-directory: ./fe
         run: npm install
 
-      - name: Build dự án
+      - name: Build dự án FE
+        working-directory: ./fe
         run: npm run build
 
-      - name: Triển khai lên Server qua SSH
+      - name: Triển khai FE lên Server qua SSH
         uses: easingthemes/ssh-deploy@v4
         env:
-          SSH_PRIVATE_KEY: ${{ secrets.SSH_KEY }}
-          SOURCE: "dist/"
-          REMOTE_HOST: "YOUR_SERVER_IP"
-          REMOTE_USER: "ubuntu"
-          TARGET: "/var/www/my-react-app"
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_KEY }}   # private key bạn đã tạo
+          REMOTE_HOST: ${{ secrets.SSH_HOST }}      # IP hoặc domain server
+          REMOTE_USER: ${{ secrets.SSH_USER }}      # ví dụ: ubuntu
+          SOURCE: "fe/dist/"
+          TARGET: "/var/www/app"
 
       # 🎉 Thông báo khi triển khai thành công
-      - name: Gửi thông báo Discord (Thành công)
+      - name: Thông Báo (Thành công)
         if: success()
         run: |
           curl -H "Content-Type: application/json" \
           -d "{
-            \"content\": \"✅ **Triển khai thành công!**\n📌 Repository: $GITHUB_REPOSITORY\n🔧 Commit: $GITHUB_SHA\n🎯 Mọi thứ đã chạy ổn định trên server.\"
+            \"content\": \"✅ **Triển khai FE thành công!**\n📌 Repository: $GITHUB_REPOSITORY\n🔧 Commit: $GITHUB_SHA\n🎯 Đã deploy lên server /var/www/app.\"
           }" \
           ${{ secrets.DISCORD_WEBHOOK }}
 
       # ❗ Thông báo khi lỗi build hoặc deploy
-      - name: Gửi thông báo Discord (Thất bại)
+      - name: Thông Báo (Thất bại)
         if: failure()
         run: |
           curl -H "Content-Type: application/json" \
           -d "{
-            \"content\": \"❌ **Triển khai thất bại!**\n⚠ Đã xảy ra lỗi trong quá trình Build hoặc Deploy.\n📌 Repository: $GITHUB_REPOSITORY\n➡ Vui lòng kiểm tra lại *GitHub Actions Logs* để biết chi tiết.\"
+            \"content\": \"❌ **Triển khai FE thất bại!**\n⚠ Lỗi trong quá trình Build hoặc Deploy.\n📌 Repository: $GITHUB_REPOSITORY\n➡ Vui lòng kiểm tra lại *GitHub Actions Logs* để biết chi tiết.\"
           }" \
           ${{ secrets.DISCORD_WEBHOOK }}
