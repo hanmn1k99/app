@@ -27,7 +27,7 @@ jobs:
         run: |
           npm run build
 
-      - name: Triển khai lên Server qua SSH
+      - name: Triển khai dự án lên Server qua SSH
         uses: easingthemes/ssh-deploy@v4
         env:
           SSH_PRIVATE_KEY: ${{ secrets.SSH_KEY }}
