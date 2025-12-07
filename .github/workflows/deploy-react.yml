@@ -1,4 +1,4 @@
-name: Triển khai ReactJS FE lên Server
+name: Triển khai ReactJS lên Server
 
 on:
   push:
@@ -17,11 +17,11 @@ jobs:
         with:
           node-version: '22'
 
-      - name: Cài đặt thư viện FE
+      - name: Cài đặt thư viện
         working-directory: ./fe
         run: npm install
 
-      - name: Build dự án FE
+      - name: Build dự án
         working-directory: ./fe
         run: npm run build
 
@@ -65,10 +65,10 @@ jobs:
 
           if [ "$JOB_STATUS" = "success" ]; then
             ICON="✅"
-            TITLE="Triển khai FE thành công"
+            TITLE="Triển khai thành công"
           else
             ICON="❌"
-            TITLE="Triển khai FE thất bại"
+            TITLE="Triển khai thất bại"
           fi
 
           MESSAGE="${ICON} **${TITLE}** | Repo: ${GITHUB_REPOSITORY} | Commit: ${SHORT_SHA}"
