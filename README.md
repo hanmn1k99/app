@@ -56,3 +56,5 @@ Xác định kỹ thuật kiểm thử, demo test case.
 ### Câu 3 – [CLO2]
 
 Báo cáo slide (10–15 phút): **kết quả, hạn chế, hướng phát triển.**
+
+abcd
