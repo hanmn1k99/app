@@ -65,10 +65,10 @@ jobs:
 
           if [ "$JOB_STATUS" = "success" ]; then
             ICON="✅"
-            TITLE="Triển khai thành công"
+            TITLE="Thành công"
           else
             ICON="❌"
-            TITLE="Triển khai thất bại"
+            TITLE="Thất bại"
           fi
 
           MESSAGE="${ICON} **${TITLE}** | Repo: ${GITHUB_REPOSITORY} | Commit: ${SHORT_SHA}"
